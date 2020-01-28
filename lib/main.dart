@@ -43,8 +43,8 @@ class CodePromo {
     return CodePromo(
       name: json["name"],
       code: json["code"],
-      startDate: json["create_time"],
-      endDate: json["end_time"],
+      startDate: DateTime.parse(json["create_time"]),
+      endDate: DateTime.parse(json["end_time"]),
     );
   }
 
@@ -55,18 +55,31 @@ class _MyHomePageState extends State<MyHomePage> {
   String resultQR = '';
   List<CodePromo> codePromos = [];
 
-  Future<List<CodePromo>> getCodePromosAPI() async
+  @override
+  void initState(){
+    super.initState();
+    debugPrint('yes');
+    getCodePromosAPI().then((value) {
+      debugPrint("Async done");
+    });
+  }
+
+  Future<void> getCodePromosAPI() async
   {
-    final response = await http.get("http://192.168.1.16:8008/api/codepromo/");
+    final response = await http.get("http://192.168.43.2:8008/api/codepromo/");
+
+    debugPrint(codePromos.toString());
+
+    List<Object> responseCodePromos = json.decode(response.body);
 
     if(response.statusCode == 200){
-      json.decode(response.body).forEach((c) {
-       codePromos.add(CodePromo.fromJson(c));
-     });
+      for(int i=0;i<responseCodePromos.length; i++)
+      setState(() {
+        codePromos.add(CodePromo.fromJson(responseCodePromos[i]));
+      });
     }else{
       throw Exception('failed to load post');
     }
-
   }
 
   Future _scanQR() async
@@ -111,14 +124,17 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            ListView.builder(
-              itemCount: codePromos.length,
-              itemBuilder: (context, index){
-                return Card(
-                  child: Text(codePromos[index].code),
-                );
-              }
-            )
+            Flexible(
+              child: ListView.builder(
+                      itemCount: codePromos.length,
+                      itemBuilder: (context, index){
+                        return Card(
+                          child: Text(codePromos[index].code, style: TextStyle(color: Colors.red, fontSize: 30)),
+                          color: Colors.black,
+                        );
+                      }
+                  ),
+            ),
           ],
         ),
       ),
