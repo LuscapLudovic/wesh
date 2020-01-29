@@ -196,6 +196,7 @@ class _MyHomePageState extends State<MyHomePage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
             IconButton(onPressed: () {}, icon: Icon(Icons.home),),
+            IconButton(onPressed: () {}, icon: Icon(Icons.history),),
           ],
         ),
     ),
