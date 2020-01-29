@@ -9,8 +9,9 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 
 
-final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
-new GlobalKey<RefreshIndicatorState>();
+final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = new GlobalKey<RefreshIndicatorState>();
+
+final _pageController = PageController();
 
 void main() => runApp(MyApp());
 
@@ -87,9 +88,7 @@ class _MyHomePageState extends State<MyHomePage> {
     if(response.statusCode == 200){
       for(int i=0;i<responseCodePromos.length; i++){
         CodePromo newCodePromo = CodePromo.fromJson(responseCodePromos[i]);
-        setState(() {
-          newListCodePromos.add(newCodePromo);
-        });
+        newListCodePromos.add(newCodePromo);
       }
     }else{
       throw Exception('failed to load post');
@@ -165,42 +164,58 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Padding(
-          padding: const EdgeInsets.only(top: 24.0),
-          child:Center(
-            child : Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Flexible(
-                  child: RefreshIndicator(
-                    key: _refreshIndicatorKey,
-                    onRefresh: _refresh,
-                    child: ListView.builder(
-                      itemCount: codePromos.length,
-                      itemBuilder: (context, index){
-                        return Card(
-                          child: Text(codePromos[index].code, style: TextStyle(color: Colors.white)),
-                          color: Colors.green,
-                        );
-                      }
+      body: PageView(
+        controller: _pageController,
+        children: <Widget>[
+          Padding(
+            padding: const EdgeInsets.only(top: 24.0),
+            child:Center(
+              child : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Flexible(
+                    child: RefreshIndicator(
+                      key: _refreshIndicatorKey,
+                      onRefresh: _refresh,
+                      child: ListView.builder(
+                          itemCount: codePromos.length,
+                          itemBuilder: (context, index){
+                            return Card(
+                              child: Text(codePromos[index].code, style: TextStyle(color: Colors.white)),
+                              color: Colors.green,
+                            );
+                          }
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        ),
-      bottomNavigationBar: new BottomAppBar(
+          Padding(
+            padding: const EdgeInsets.only(top: 24.0),
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: <Widget>[
+                  Text('history'),
+                ],
+              ),
+            ),
+          )
+        ],
+      ),
+      bottomNavigationBar: BottomAppBar(
         shape: CircularNotchedRectangle(),
-        child: new Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: <Widget>[
-            IconButton(onPressed: () {}, icon: Icon(Icons.home),),
-            IconButton(onPressed: () {}, icon: Icon(Icons.history),),
+            IconButton(onPressed: (){_pageController.jumpToPage(0);}, icon: Icon(Icons.home)),
+            IconButton(onPressed: (){_pageController.jumpToPage(1);}, icon: Icon(Icons.history),),
           ],
         ),
     ),
-      floatingActionButton: new FloatingActionButton(
+      floatingActionButton: FloatingActionButton(
         child: Icon(Icons.camera_alt), onPressed: _scanQR,
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
