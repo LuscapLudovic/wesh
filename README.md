@@ -1,6 +1,6 @@
 # wesh
 
-it&#x27;s wish but in streewear version
+it&#x27;s wish but in streetwear version
 
 ## Getting Started
 
