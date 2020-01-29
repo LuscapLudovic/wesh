@@ -1,10 +1,16 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
+
+
+final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey =
+new GlobalKey<RefreshIndicatorState>();
 
 void main() => runApp(MyApp());
 
@@ -54,32 +60,41 @@ class _MyHomePageState extends State<MyHomePage> {
 
   String resultQR = '';
   List<CodePromo> codePromos = [];
+  String errorMessage = '';
 
   @override
   void initState(){
     super.initState();
-    debugPrint('yes');
-    getCodePromosAPI().then((value) {
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+    _getCodePromosAPI().then((_codePromos) {
+      setState(() {
+        codePromos = _codePromos;
+      });
       debugPrint("Async done");
     });
   }
 
-  Future<void> getCodePromosAPI() async
+  Future<List<CodePromo>> _getCodePromosAPI() async
   {
-    final response = await http.get("http://192.168.43.2:8008/api/codepromo/");
-
-    debugPrint(codePromos.toString());
+    final response = await http.get("http://192.168.43.2:8008/api/codepromo/").timeout(new Duration(seconds: 5)).catchError((error){
+      _showDialog('Error API', 'Fail to connect to the API');
+    });
 
     List<Object> responseCodePromos = json.decode(response.body);
+    List<CodePromo> newListCodePromos = [];
 
     if(response.statusCode == 200){
-      for(int i=0;i<responseCodePromos.length; i++)
-      setState(() {
-        codePromos.add(CodePromo.fromJson(responseCodePromos[i]));
-      });
+      for(int i=0;i<responseCodePromos.length; i++){
+        CodePromo newCodePromo = CodePromo.fromJson(responseCodePromos[i]);
+        setState(() {
+          newListCodePromos.add(newCodePromo);
+        });
+      }
     }else{
       throw Exception('failed to load post');
     }
+    return newListCodePromos;
   }
 
   Future _scanQR() async
@@ -113,6 +128,36 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
+  Future<Null> _refresh() {
+    return _getCodePromosAPI().then((_codePromos){
+      setState(() {
+        codePromos = _codePromos;
+      });
+    });
+  }
+
+  void _showDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        // return object of type Dialog
+        return AlertDialog(
+          title: new Text(title),
+          content: new Text(content),
+          actions: <Widget>[
+            // usually buttons at the bottom of the dialog
+            new FlatButton(
+              child: new Text("Close"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
 
@@ -120,30 +165,44 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Flexible(
-              child: ListView.builder(
+      body: Padding(
+          padding: const EdgeInsets.only(top: 24.0),
+          child:Center(
+            child : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: <Widget>[
+                Flexible(
+                  child: RefreshIndicator(
+                    key: _refreshIndicatorKey,
+                    onRefresh: _refresh,
+                    child: ListView.builder(
                       itemCount: codePromos.length,
                       itemBuilder: (context, index){
                         return Card(
-                          child: Text(codePromos[index].code, style: TextStyle(color: Colors.red, fontSize: 30)),
-                          color: Colors.black,
+                          child: Text(codePromos[index].code, style: TextStyle(color: Colors.white)),
+                          color: Colors.green,
                         );
                       }
+                    ),
                   ),
+                ),
+              ],
             ),
+          ),
+        ),
+      bottomNavigationBar: new BottomAppBar(
+        shape: CircularNotchedRectangle(),
+        child: new Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: <Widget>[
+            IconButton(onPressed: () {}, icon: Icon(Icons.home),),
           ],
         ),
+    ),
+      floatingActionButton: new FloatingActionButton(
+        child: Icon(Icons.camera_alt), onPressed: _scanQR,
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _scanQR,
-        icon: Icon(Icons.camera_alt),
-        label: Text("Scan"),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
 }
