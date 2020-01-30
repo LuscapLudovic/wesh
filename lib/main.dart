@@ -7,6 +7,8 @@ import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
+import 'package:wesh/components/ErrorDialog.dart';
+import 'package:wesh/components/LoginDialog.dart';
 
 
 import 'package:wesh/models/codePromo.dart';
@@ -50,13 +52,8 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState(){
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => LoginDialog(context));
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-    _getAllCodePromosAPI().then((_codePromos) {
-      setState(() {
-        codePromos = _codePromos;
-      });
-      debugPrint("Async done");
-    });
   }
 
   Future<List<CodePromo>> _getAllCodePromosAPI() async
@@ -64,17 +61,20 @@ class _MyHomePageState extends State<MyHomePage> {
     final response = await http.get("http://192.168.43.2:8008/api/codepromo/")
         .timeout(new Duration(seconds: 5))
         .catchError((error){
-      _showDialog('Error API', 'Fail to connect to the API');
+      ErrorDialog('Error API', 'Fail to connect to the API', context);
     });
 
-    List<Object> responseCodePromos = json.decode(response.body);
+    debugPrint(response.statusCode.toString());
     List<CodePromo> newListCodePromos = [];
 
     if(response.statusCode == 200){
+      List<Object> responseCodePromos = json.decode(response.body);
       for(int i=0; i<responseCodePromos.length; i++){
         CodePromo newCodePromo = CodePromo.fromJson(responseCodePromos[i]);
         newListCodePromos.add(newCodePromo);
       }
+    }else if(response.statusCode == 401){
+      ErrorDialog('Error API', 'Your are not authentified', context);
     }else{
       throw Exception('failed to load post');
     }
@@ -86,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
     final response = await http.get("http://192.168.43.2:8008/api/codepromo/" + codePromo)
         .timeout(new Duration(seconds: 5))
         .catchError((error){
-      _showDialog('Error API', 'Fail to connect to the API');
+      ErrorDialog('Error API', 'Fail to connect to the API', context);
     });
 
     CodePromo newCodePromo;
@@ -94,13 +94,14 @@ class _MyHomePageState extends State<MyHomePage> {
     if(response.statusCode == 200){
       newCodePromo = CodePromo.fromJson(json.decode(response.body));
     }else if(response.statusCode == 404){
-      _showDialog('Code not found', 'this code is not available');
+      ErrorDialog('Code not found', 'this code is not available', context);
       throw Exception("this code doesn't exist");
     }
     else{
-      _showDialog("Error with your qrCode", "Your QrCode is no correct");
+      ErrorDialog("Error with your qrCode", "Your QrCode is no correct", context);
       throw Exception('failed to load post');
     }
+
     return newCodePromo;
   }
 
@@ -147,28 +148,6 @@ class _MyHomePageState extends State<MyHomePage> {
         codePromos = _codePromos;
       });
     });
-  }
-
-  void _showDialog(String title, String content) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        // return object of type Dialog
-        return AlertDialog(
-          title: new Text(title),
-          content: new Text(content),
-          actions: <Widget>[
-            // usually buttons at the bottom of the dialog
-            new FlatButton(
-              child: new Text("Close"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 
   @override
