@@ -95,6 +95,7 @@ class _MyHomePageState extends State<MyHomePage> {
       newCodePromo = CodePromo.fromJson(json.decode(response.body));
     }else if(response.statusCode == 404){
       _showDialog('Code not found', 'this code is not available');
+      throw Exception("this code doesn't exist");
     }
     else{
       throw Exception('failed to load post');
@@ -108,6 +109,12 @@ class _MyHomePageState extends State<MyHomePage> {
     try{
       String qrCode = await BarcodeScanner.scan();
       CodePromo codePromo = await _getOneCodePromoAPI(qrCode);
+
+      for(int i=0; i < historyCodePromos.length; i++){
+        if(historyCodePromos[i].code == codePromo.code){
+          historyCodePromos.remove(historyCodePromos[i]);
+        }
+      }
       setState(() {
         historyCodePromos.add(codePromo);
       });
@@ -130,6 +137,7 @@ class _MyHomePageState extends State<MyHomePage> {
         errorMessage = "Unknown error $err";
       });
     }
+    _pageController.jumpToPage(1);
   }
 
   Future<Null> _refresh() {
