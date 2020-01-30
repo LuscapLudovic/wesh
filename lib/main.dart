@@ -98,6 +98,7 @@ class _MyHomePageState extends State<MyHomePage> {
       throw Exception("this code doesn't exist");
     }
     else{
+      _showDialog("Error with your qrCode", "Your QrCode is no correct");
       throw Exception('failed to load post');
     }
     return newCodePromo;
