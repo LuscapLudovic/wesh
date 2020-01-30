@@ -7,6 +7,8 @@ import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
+
+
 import 'package:wesh/models/codePromo.dart';
 
 
@@ -40,15 +42,16 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
 
-  String resultQR = '';
+  CodePromo resultQR;
   List<CodePromo> codePromos = [];
+  List<CodePromo> historyCodePromos = [];
   String errorMessage = '';
 
   @override
   void initState(){
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-    _getCodePromosAPI().then((_codePromos) {
+    _getAllCodePromosAPI().then((_codePromos) {
       setState(() {
         codePromos = _codePromos;
       });
@@ -56,7 +59,7 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<List<CodePromo>> _getCodePromosAPI() async
+  Future<List<CodePromo>> _getAllCodePromosAPI() async
   {
     final response = await http.get("http://192.168.43.2:8008/api/codepromo/")
         .timeout(new Duration(seconds: 5))
@@ -78,37 +81,59 @@ class _MyHomePageState extends State<MyHomePage> {
     return newListCodePromos;
   }
 
+  Future<CodePromo> _getOneCodePromoAPI(String codePromo) async
+  {
+    final response = await http.get("http://192.168.43.2:8008/api/codepromo/" + codePromo)
+        .timeout(new Duration(seconds: 5))
+        .catchError((error){
+      _showDialog('Error API', 'Fail to connect to the API');
+    });
+
+    CodePromo newCodePromo;
+
+    if(response.statusCode == 200){
+      newCodePromo = CodePromo.fromJson(json.decode(response.body));
+    }else if(response.statusCode == 404){
+      _showDialog('Code not found', 'this code is not available');
+    }
+    else{
+      throw Exception('failed to load post');
+    }
+    return newCodePromo;
+  }
+
   Future _scanQR() async
   {
 
     try{
-      String qrResult = await BarcodeScanner.scan();
+      String qrCode = await BarcodeScanner.scan();
+      CodePromo codePromo = await _getOneCodePromoAPI(qrCode);
       setState(() {
-        resultQR = qrResult;
+        historyCodePromos.add(codePromo);
       });
     } on PlatformException catch(err) {
       if (err.code == BarcodeScanner.CameraAccessDenied){
         setState(() {
-          resultQR = "Camera permission denied";
+          errorMessage = "Camera permission denied";
         });
       } else {
         setState(() {
-          resultQR = "Unknown error $err";
+          errorMessage = "Unknown error $err";
         });
       }
     } on FormatException {
       setState(() {
-        resultQR = "You pressed the back button before scanning anything";
+        errorMessage = "You pressed the back button before scanning anything";
       });
     } catch(err) {
       setState(() {
-        resultQR = "Unknown error $err";
+        errorMessage = "Unknown error $err";
       });
     }
   }
 
   Future<Null> _refresh() {
-    return _getCodePromosAPI().then((_codePromos) {
+    return _getAllCodePromosAPI().then((_codePromos) {
       setState(() {
         codePromos = _codePromos;
       });
@@ -157,13 +182,13 @@ class _MyHomePageState extends State<MyHomePage> {
                       key: _refreshIndicatorKey,
                       onRefresh: _refresh,
                       child: ListView.builder(
-                          itemCount: codePromos.length,
-                          itemBuilder: (context, index){
-                            return Card(
-                              child: Text(codePromos[index].code, style: TextStyle(color: Colors.white)),
-                              color: Colors.green,
-                            );
-                          }
+                        itemCount: codePromos.length,
+                        itemBuilder: (context, index){
+                          return Card(
+                            child: Text(codePromos[index].code, style: TextStyle(color: Colors.white)),
+                            color: Colors.green,
+                          );
+                        }
                       ),
                     ),
                   ),
@@ -177,7 +202,17 @@ class _MyHomePageState extends State<MyHomePage> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
-                  Text('history'),
+                  Flexible(
+                    child: ListView.builder(
+                      itemCount: historyCodePromos.length,
+                      itemBuilder: (context, index){
+                        return Card(
+                          child: Text(historyCodePromos[index].code, style: TextStyle(color: Colors.white)),
+                          color: Colors.green,
+                        );
+                      }
+                    ),
+                  ),
                 ],
               ),
             ),
