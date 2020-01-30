@@ -1,13 +1,14 @@
 
 
 class CodePromo {
+  String name;
+  String code;
+  DateTime startDate;
+  DateTime endDate;
 
-  String name = '';
-  String code = '';
-  DateTime startDate = DateTime.now();
-  DateTime endDate = DateTime.now();
-
-  CodePromo({this.name, this.code, this.startDate, this.endDate});
+  CodePromo({this.name = 'NoName', this.code = 'NONAME', DateTime startDate, DateTime endDate}):
+        startDate = startDate ?? DateTime.now(),
+        endDate = endDate ?? DateTime.now();
 
   factory CodePromo.fromJson(Map<String, dynamic> json) {
     return CodePromo(
@@ -16,6 +17,11 @@ class CodePromo {
       startDate: DateTime.parse(json["create_time"]),
       endDate: DateTime.parse(json["end_time"]),
     );
+  }
+
+  bool get isValide {
+    DateTime now = DateTime.now();
+    return startDate.isBefore(now) && endDate.isAfter(now);
   }
 
 }
