@@ -58,7 +58,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<List<CodePromo>> _getAllCodePromosAPI() async
   {
-    final response = await http.get("http://192.168.43.2:8008/api/codepromo/")
+    final response = await http.get("http://192.168.43.2:8008/api/codepromo/", headers: {"Authorization" : "Token " + LoginDialog.token})
         .timeout(new Duration(seconds: 5))
         .catchError((error){
       ErrorDialog('Error API', 'Fail to connect to the API', context);
@@ -83,7 +83,7 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<CodePromo> _getOneCodePromoAPI(String codePromo) async
   {
-    final response = await http.get("http://192.168.43.2:8008/api/codepromo/" + codePromo)
+    final response = await http.get("http://192.168.43.2:8008/api/codepromo/" + codePromo + "/", headers: {"Authorization" : "Token " + LoginDialog.token})
         .timeout(new Duration(seconds: 5))
         .catchError((error){
       ErrorDialog('Error API', 'Fail to connect to the API', context);

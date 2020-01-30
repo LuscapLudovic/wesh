@@ -9,6 +9,7 @@ import 'package:wesh/components/ErrorDialog.dart';
 class LoginDialog{
   TextEditingController _username = TextEditingController();
   TextEditingController _password = TextEditingController();
+  static String token = '';
 
   LoginDialog(BuildContext context){
 
@@ -35,8 +36,9 @@ class LoginDialog{
               new FlatButton(
                 child: new Text("Login"),
                 onPressed: () {
-                  if (_loginApi(context))
-                  Navigator.of(context).pop();
+                  _loginApi(context).then((isConnected) => {
+                    Navigator.of(context).pop()
+                  });
                 },
               ),
             ],
@@ -46,17 +48,22 @@ class LoginDialog{
     }
 
 
-    bool _loginApi(BuildContext context) {
-      bool isConnected = false;
-      http.post(
+    Future<bool> _loginApi(BuildContext context) async {
+      http.Response response = await http.post(
             'http://192.168.43.2:8008/api/token-auth/',
             headers: {"Content-Type": "application/json"},
-            body: json.encode({'username': _username.toString(), 'password': _password.toString()})
-        ).timeout(Duration(seconds: 5))
-          .then((response) => { if(response.statusCode == 200) isConnected = true })
-          .catchError((error) => {ErrorDialog('Error Auth', 'Username or Password is wrong', context)});
+            body: json.encode({'username': _username.text, 'password': _password.text})
+        ).timeout(Duration(seconds: 5));
 
-      return isConnected;
+      if(response.statusCode != 200){
+        ErrorDialog('Error Auth', 'Username or Password is wrong', context);
+      }else{
+        _token = json.decode(response.body)['token'];
+      }
+
+      debugPrint(_token);
+
+      return (response.statusCode == 200);
     }
 
 }
