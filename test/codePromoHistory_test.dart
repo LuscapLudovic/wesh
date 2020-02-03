@@ -1,24 +1,25 @@
 import 'package:test/test.dart';
 import 'package:wesh/models/codePromo.dart';
+import 'package:wesh/models/codePromoHistory.dart';
 
 void main() {
-  group('CodePromo', () {
+  group('CodePromoHistory', () {
     test('default should be NoName', () {
-      expect(CodePromo().name, 'NoName');
-      expect(CodePromo().code, 'NONAME');
+      CodePromo defaultCode = CodePromoHistory().code;
+      expect(defaultCode.name, 'NoName');
+      expect(defaultCode.code, 'NONAME');
     });
 
     test('values should be inicialised', () {
-      final codePromo = CodePromo(
-          name: 'Name',
-          code: 'CODE',
-          startDate: DateTime.utc(2019, 02, 20, 8),
-          endDate: DateTime.utc(2019, 02, 21)
+      final codePromoHistory = CodePromoHistory(
+          code: CodePromo(
+              name: 'Name',
+              code: 'CODE',
+              startDate: DateTime.utc(2019, 02, 20, 8),
+              endDate: DateTime.utc(2019, 02, 21)
+          ),
+          dateScan: DateTime.utc(2019, 02, 20, 8)
       );
-      expect(codePromo.name, 'Name');
-      expect(codePromo.code, 'CODE');
-      expect(codePromo.startDate, DateTime.utc(2019, 02, 20, 8));
-      expect(codePromo.endDate, DateTime.utc(2019, 02, 21));
     });
 
     test('isValide should be true or false', () {
