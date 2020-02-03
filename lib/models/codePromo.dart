@@ -1,5 +1,7 @@
 
 
+import 'dart:convert';
+
 class CodePromo {
   String name;
   String code;
@@ -12,8 +14,8 @@ class CodePromo {
 
   factory CodePromo.fromJson(Map<String, dynamic> json) {
     return CodePromo(
-      name: json["name"],
-      code: json["code"],
+      name: utf8.decode(json['name'].toString().codeUnits),
+      code: utf8.decode(json['code'].toString().codeUnits),
       startDate: DateTime.parse(json["create_time"]),
       endDate: DateTime.parse(json["end_time"]),
     );

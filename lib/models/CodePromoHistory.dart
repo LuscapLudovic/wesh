@@ -1,13 +1,16 @@
+import 'package:wesh/models/codePromo.dart';
+
 class CodePromoHistory {
-  String code;
+  CodePromo code;
   DateTime dateScan;
 
-  CodePromoHistory({this.code = 'NONAME', DateTime dateScan}):
+  CodePromoHistory({CodePromo code, DateTime dateScan}):
+      code = code ?? CodePromo(name: 'Name', code: 'Code'),
       dateScan = dateScan ?? DateTime.now();
 
   factory CodePromoHistory.fromJson(Map<String, dynamic> json) {
     return CodePromoHistory(
-      code: json["code"],
+      code: CodePromo.fromJson(json["code"]),
       dateScan: DateTime.parse(json["time"]),
     );
   }

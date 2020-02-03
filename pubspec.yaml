@@ -26,6 +26,7 @@ dependencies:
   barcode_scan:
   http:
   test:
+  intl: ^0.16.1
 
 dev_dependencies:
   flutter_test:

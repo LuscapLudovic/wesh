@@ -6,12 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
+
+
 import 'package:wesh/components/ErrorDialog.dart';
 import 'package:wesh/components/LoginDialog.dart';
 import 'package:wesh/models/CodePromoHistory.dart';
-
-
 import 'package:wesh/models/codePromo.dart';
 
 
@@ -59,13 +60,12 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<List<CodePromo>> _getAllCodePromosAPI() async
   {
-    final response = await http.get("http://192.168.43.2:8008/api/codepromo/", headers: {"Authorization" : LoginDialog.token})
+    final response = await http.get("http://192.168.43.2:8008/api/codepromo/?time=" + DateTime.now().toIso8601String(), headers: {"Authorization" : LoginDialog.token})
         .timeout(new Duration(seconds: 5))
         .catchError((error){
       ErrorDialog('Error API', 'Fail to connect to the API', context);
     });
 
-    debugPrint(response.statusCode.toString());
     List<CodePromo> newListCodePromos = [];
 
     switch(response.statusCode){
@@ -130,7 +130,6 @@ class _MyHomePageState extends State<MyHomePage> {
       ErrorDialog('Error API', 'Fail to connect to the API', context);
     });
 
-    debugPrint(response.statusCode.toString());
     List<CodePromoHistory> newListCodePromos = [];
 
     switch(response.statusCode){
@@ -226,8 +225,35 @@ class _MyHomePageState extends State<MyHomePage> {
                         itemCount: codePromos.length,
                         itemBuilder: (context, index){
                           return Card(
-                            child: Text(codePromos[index].code, style: TextStyle(color: Colors.white)),
-                            color: Colors.green,
+                            margin: EdgeInsets.all(12),
+                            elevation: 4,
+                            color: Colors.blue,
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                              child: Row(
+                                children: <Widget>[
+                                  Column(
+
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: <Widget>[
+                                      Text(codePromos[index].name,
+                                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                                          overflow: TextOverflow.fade,
+                                          softWrap: false,
+                                          maxLines: 1,
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text("Code: " + codePromos[index].code, style: TextStyle(color: Colors.white70)),
+                                      Text(new DateFormat.yMMMd().format(codePromos[index].startDate)
+                                          + " --> "
+                                          + new DateFormat.yMMMd().format(codePromos[index].endDate),
+                                          style: TextStyle(color: Colors.white70)),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
                           );
                         }
                       ),
@@ -251,8 +277,36 @@ class _MyHomePageState extends State<MyHomePage> {
                           itemCount: historyCodePromos.length,
                           itemBuilder: (context, index){
                             return Card(
-                              child: Text(historyCodePromos[index].code, style: TextStyle(color: Colors.white)),
-                              color: Colors.green,
+                              margin: EdgeInsets.all(12),
+                              elevation: 4,
+                              color: Colors.blue,
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+                                child: Row(
+                                  children: <Widget>[
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: <Widget>[
+                                          Text(historyCodePromos[index].code.name,
+                                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                                            overflow: TextOverflow.clip,
+                                            softWrap: false,
+                                            maxLines: 1,
+                                          ),
+                                          SizedBox(height: 4),
+                                          Text("Code: " + historyCodePromos[index].code.code, style: TextStyle(color: Colors.white70)),
+                                          Text(new DateFormat.yMMMd().format(historyCodePromos[index].code.startDate)
+                                              + " --> "
+                                              + new DateFormat.yMMMd().format(historyCodePromos[index].code.endDate),
+                                              style: TextStyle(color: Colors.white70)),
+                                        ],
+                                      ),
+                                    )
+                                  ],
+                                ),
+                              ),
                             );
                           }
                       ),
