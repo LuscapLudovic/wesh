@@ -9,12 +9,14 @@ import 'package:flutter/widgets.dart';
 import 'package:http/http.dart' as http;
 import 'package:wesh/components/ErrorDialog.dart';
 import 'package:wesh/components/LoginDialog.dart';
+import 'package:wesh/models/CodePromoHistory.dart';
 
 
 import 'package:wesh/models/codePromo.dart';
 
 
-final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = new GlobalKey<RefreshIndicatorState>();
+final GlobalKey<RefreshIndicatorState> _refreshIndicatorListCodePromos = new GlobalKey<RefreshIndicatorState>();
+final GlobalKey<RefreshIndicatorState> _refreshIndicatorLHistoryCodePromos = new GlobalKey<RefreshIndicatorState>();
 
 final _pageController = PageController();
 
@@ -46,19 +48,18 @@ class _MyHomePageState extends State<MyHomePage> {
 
   CodePromo resultQR;
   List<CodePromo> codePromos = [];
-  List<CodePromo> historyCodePromos = [];
+  List<CodePromoHistory> historyCodePromos = [];
   String errorMessage = '';
 
   @override
   void initState(){
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => LoginDialog(context));
-    WidgetsBinding.instance.addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
   }
 
   Future<List<CodePromo>> _getAllCodePromosAPI() async
   {
-    final response = await http.get("http://192.168.43.2:8008/api/codepromo/", headers: {"Authorization" : "Token " + LoginDialog.token})
+    final response = await http.get("http://192.168.43.2:8008/api/codepromo/", headers: {"Authorization" : LoginDialog.token})
         .timeout(new Duration(seconds: 5))
         .catchError((error){
       ErrorDialog('Error API', 'Fail to connect to the API', context);
@@ -67,23 +68,33 @@ class _MyHomePageState extends State<MyHomePage> {
     debugPrint(response.statusCode.toString());
     List<CodePromo> newListCodePromos = [];
 
-    if(response.statusCode == 200){
-      List<Object> responseCodePromos = json.decode(response.body);
-      for(int i=0; i<responseCodePromos.length; i++){
-        CodePromo newCodePromo = CodePromo.fromJson(responseCodePromos[i]);
-        newListCodePromos.add(newCodePromo);
-      }
-    }else if(response.statusCode == 401){
-      ErrorDialog('Error API', 'Your are not authentified', context);
-    }else{
-      throw Exception('failed to load post');
+    switch(response.statusCode){
+      case 200:
+        List<Object> responseCodePromos = json.decode(response.body);
+        for(int i=0; i<responseCodePromos.length; i++){
+          CodePromo newCodePromo = CodePromo.fromJson(responseCodePromos[i]);
+          newListCodePromos.add(newCodePromo);
+        }
+        break;
+      case 401:
+        LoginDialog(context);
+        ErrorDialog('Error API', 'Your are not authentified', context);
+        break;
+      case 404:
+        ErrorDialog('Code not found', 'this code is not available', context);
+        throw Exception("this code doesn't exist");
+        break;
+      default:
+        ErrorDialog("Error with your qrCode", "Your QrCode is no correct", context);
+        throw Exception('failed to load post');
+        break;
     }
     return newListCodePromos;
   }
 
   Future<CodePromo> _getOneCodePromoAPI(String codePromo) async
   {
-    final response = await http.get("http://192.168.43.2:8008/api/codepromo/" + codePromo + "/", headers: {"Authorization" : "Token " + LoginDialog.token})
+    final response = await http.get("http://192.168.43.2:8008/api/codepromo/" + codePromo + "/", headers: {"Authorization" : LoginDialog.token})
         .timeout(new Duration(seconds: 5))
         .catchError((error){
       ErrorDialog('Error API', 'Fail to connect to the API', context);
@@ -91,18 +102,59 @@ class _MyHomePageState extends State<MyHomePage> {
 
     CodePromo newCodePromo;
 
-    if(response.statusCode == 200){
-      newCodePromo = CodePromo.fromJson(json.decode(response.body));
-    }else if(response.statusCode == 404){
-      ErrorDialog('Code not found', 'this code is not available', context);
-      throw Exception("this code doesn't exist");
-    }
-    else{
-      ErrorDialog("Error with your qrCode", "Your QrCode is no correct", context);
-      throw Exception('failed to load post');
+    switch(response.statusCode){
+      case 200:
+        newCodePromo = CodePromo.fromJson(json.decode(response.body));
+        break;
+      case 401:
+        LoginDialog(context);
+        ErrorDialog('Error API', 'Your are not authentified', context);
+        break;
+      case 404:
+        ErrorDialog('Code not found', 'this code is not available', context);
+        throw Exception("this code doesn't exist");
+        break;
+      default:
+        ErrorDialog("Error with your qrCode", "Your QrCode is no correct", context);
+        throw Exception('failed to load post');
+        break;
     }
 
     return newCodePromo;
+  }
+
+  Future<List<CodePromoHistory>> _getHistory() async{
+    final response = await http.get("http://192.168.43.2:8008/api/history/", headers: {"Authorization" : LoginDialog.token})
+        .timeout(new Duration(seconds: 5))
+        .catchError((error){
+      ErrorDialog('Error API', 'Fail to connect to the API', context);
+    });
+
+    debugPrint(response.statusCode.toString());
+    List<CodePromoHistory> newListCodePromos = [];
+
+    switch(response.statusCode){
+      case 200:
+        List<Object> responseCodePromos = json.decode(response.body);
+        for(int i=0; i<responseCodePromos.length; i++){
+          CodePromoHistory newCodePromo = CodePromoHistory.fromJson(responseCodePromos[i]);
+          newListCodePromos.add(newCodePromo);
+        }
+        break;
+      case 401:
+        LoginDialog(context);
+        ErrorDialog('Error API', 'Your are not authentified', context);
+        break;
+      case 404:
+        ErrorDialog('History not found', 'Error request History', context);
+        throw Exception("your history doesn't exist");
+        break;
+      default:
+        ErrorDialog("Error with your qrCode", "Your QrCode is no correct", context);
+        throw Exception('failed to load post');
+        break;
+    }
+    return newListCodePromos;
   }
 
   Future _scanQR() async
@@ -110,16 +162,9 @@ class _MyHomePageState extends State<MyHomePage> {
 
     try{
       String qrCode = await BarcodeScanner.scan();
-      CodePromo codePromo = await _getOneCodePromoAPI(qrCode);
+      await _getOneCodePromoAPI(qrCode);
+      _refreshHistory();
 
-      for(int i=0; i < historyCodePromos.length; i++){
-        if(historyCodePromos[i].code == codePromo.code){
-          historyCodePromos.remove(historyCodePromos[i]);
-        }
-      }
-      setState(() {
-        historyCodePromos.add(codePromo);
-      });
     } on PlatformException catch(err) {
       if (err.code == BarcodeScanner.CameraAccessDenied){
         setState(() {
@@ -142,10 +187,18 @@ class _MyHomePageState extends State<MyHomePage> {
     _pageController.jumpToPage(1);
   }
 
-  Future<Null> _refresh() {
+  Future<Null> _refreshListCodePromos() {
     return _getAllCodePromosAPI().then((_codePromos) {
       setState(() {
         codePromos = _codePromos;
+      });
+    });
+  }
+
+  Future<Null> _refreshHistory(){
+    return _getHistory().then((_codePromos){
+      setState(() {
+        historyCodePromos = _codePromos;
       });
     });
   }
@@ -167,8 +220,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 children: <Widget>[
                   Flexible(
                     child: RefreshIndicator(
-                      key: _refreshIndicatorKey,
-                      onRefresh: _refresh,
+                      key: _refreshIndicatorListCodePromos,
+                      onRefresh: _refreshListCodePromos,
                       child: ListView.builder(
                         itemCount: codePromos.length,
                         itemBuilder: (context, index){
@@ -191,14 +244,18 @@ class _MyHomePageState extends State<MyHomePage> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: <Widget>[
                   Flexible(
-                    child: ListView.builder(
-                      itemCount: historyCodePromos.length,
-                      itemBuilder: (context, index){
-                        return Card(
-                          child: Text(historyCodePromos[index].code, style: TextStyle(color: Colors.white)),
-                          color: Colors.green,
-                        );
-                      }
+                    child: RefreshIndicator(
+                      key: _refreshIndicatorLHistoryCodePromos,
+                      onRefresh: _refreshHistory,
+                      child: ListView.builder(
+                          itemCount: historyCodePromos.length,
+                          itemBuilder: (context, index){
+                            return Card(
+                              child: Text(historyCodePromos[index].code, style: TextStyle(color: Colors.white)),
+                              color: Colors.green,
+                            );
+                          }
+                      ),
                     ),
                   ),
                 ],

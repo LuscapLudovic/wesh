@@ -15,6 +15,7 @@ class LoginDialog{
 
       showDialog(
         context: context,
+        barrierDismissible: false,
         builder: (BuildContext context) {
           // return object of type Dialog
           return AlertDialog(
@@ -58,10 +59,10 @@ class LoginDialog{
       if(response.statusCode != 200){
         ErrorDialog('Error Auth', 'Username or Password is wrong', context);
       }else{
-        _token = json.decode(response.body)['token'];
+        token = "Token " + json.decode(response.body)['token'];
       }
 
-      debugPrint(_token);
+      debugPrint(token);
 
       return (response.statusCode == 200);
     }
