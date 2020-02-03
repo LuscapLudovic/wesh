@@ -55,7 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState(){
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => LoginDialog(context));
+    WidgetsBinding.instance.addPostFrameCallback((_) => loginAndRefresh());
   }
 
   Future<List<CodePromo>> _getAllCodePromosAPI() async
@@ -77,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
         break;
       case 401:
-        LoginDialog(context);
+        loginAndRefresh();
         ErrorDialog('Error API', 'Your are not authentified', context);
         break;
       case 404:
@@ -107,7 +107,7 @@ class _MyHomePageState extends State<MyHomePage> {
         newCodePromo = CodePromo.fromJson(json.decode(response.body));
         break;
       case 401:
-        LoginDialog(context);
+        loginAndRefresh();
         ErrorDialog('Error API', 'Your are not authentified', context);
         break;
       case 404:
@@ -141,7 +141,7 @@ class _MyHomePageState extends State<MyHomePage> {
         }
         break;
       case 401:
-        LoginDialog(context);
+        loginAndRefresh();
         ErrorDialog('Error API', 'Your are not authentified', context);
         break;
       case 404:
@@ -200,6 +200,18 @@ class _MyHomePageState extends State<MyHomePage> {
         historyCodePromos = _codePromos;
       });
     });
+  }
+
+  Future loginAndRefresh() async{
+   String state = await LoginDialog.loginDialogShow(context);
+
+   debugPrint(state);
+
+   if(state == 'success'){
+     _refreshListCodePromos();
+     _refreshHistory();
+   }
+
   }
 
   Color getColorByStatue(DateTime startDate, DateTime endDate){

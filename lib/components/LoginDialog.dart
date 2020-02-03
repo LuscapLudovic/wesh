@@ -7,13 +7,13 @@ import 'package:http/http.dart' as http;
 import 'package:wesh/components/ErrorDialog.dart';
 
 class LoginDialog{
-  TextEditingController _username = TextEditingController();
-  TextEditingController _password = TextEditingController();
+  static TextEditingController _username = TextEditingController();
+  static TextEditingController _password = TextEditingController();
   static String token = '';
 
-  LoginDialog(BuildContext context){
+  static Future<String> loginDialogShow(BuildContext context) async {
 
-      showDialog(
+    String value = await showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
@@ -38,7 +38,7 @@ class LoginDialog{
                 child: new Text("Login"),
                 onPressed: () {
                   _loginApi(context).then((isConnected) => {
-                    Navigator.of(context).pop()
+                    Navigator.pop(context, 'success')
                   });
                 },
               ),
@@ -46,10 +46,12 @@ class LoginDialog{
           );
         },
       );
+
+    return value;
+
     }
 
-
-    Future<bool> _loginApi(BuildContext context) async {
+    static Future<bool> _loginApi(BuildContext context) async {
       http.Response response = await http.post(
             'http://192.168.43.2:8008/api/token-auth/',
             headers: {"Content-Type": "application/json"},
