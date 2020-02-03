@@ -202,6 +202,16 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
+  Color getColorByStatue(DateTime startDate, DateTime endDate){
+    if(startDate.isAfter(DateTime.now())){
+      return Colors.blue;
+    }else if(endDate.isAfter(DateTime.now())){
+      return Colors.green;
+    }else{
+      return Colors.grey;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -227,30 +237,31 @@ class _MyHomePageState extends State<MyHomePage> {
                           return Card(
                             margin: EdgeInsets.all(12),
                             elevation: 4,
-                            color: Colors.blue,
+                            color: getColorByStatue(codePromos[index].startDate, codePromos[index].endDate),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                               child: Row(
                                 children: <Widget>[
-                                  Column(
-
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: <Widget>[
-                                      Text(codePromos[index].name,
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: <Widget>[
+                                        Text(codePromos[index].name,
                                           style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                                           overflow: TextOverflow.fade,
                                           softWrap: false,
                                           maxLines: 1,
-                                      ),
-                                      SizedBox(height: 4),
-                                      Text("Code: " + codePromos[index].code, style: TextStyle(color: Colors.white70)),
-                                      Text(new DateFormat.yMMMd().format(codePromos[index].startDate)
-                                          + " --> "
-                                          + new DateFormat.yMMMd().format(codePromos[index].endDate),
-                                          style: TextStyle(color: Colors.white70)),
-                                    ],
-                                  ),
+                                        ),
+                                        SizedBox(height: 4),
+                                        Text("Code: " + codePromos[index].code, style: TextStyle(color: Colors.white70)),
+                                        Text(new DateFormat.yMMMd().format(codePromos[index].startDate)
+                                            + " --> "
+                                            + new DateFormat.yMMMd().format(codePromos[index].endDate),
+                                            style: TextStyle(color: Colors.white70)),
+                                      ],
+                                    ),
+                                  )
                                 ],
                               ),
                             ),
@@ -279,7 +290,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             return Card(
                               margin: EdgeInsets.all(12),
                               elevation: 4,
-                              color: Colors.blue,
+                              color: getColorByStatue(historyCodePromos[index].code.startDate, historyCodePromos[index].code.endDate),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                                 child: Row(
