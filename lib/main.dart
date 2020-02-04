@@ -9,7 +9,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:wesh/components/ErrorDialog.dart';
 import 'package:wesh/components/LoginDialog.dart';
-import 'package:wesh/models/CodePromoHistory.dart';
+import 'package:wesh/models/codePromoHistory.dart';
 import 'package:wesh/models/codePromo.dart';
 
 

@@ -13,7 +13,7 @@ class CodePromoHistory {
   DateTime dateScan;
 
   CodePromoHistory({CodePromo code, DateTime dateScan}):
-      code = code ?? CodePromo(name: 'Name', code: 'Code'),
+      code = code ?? CodePromo(),
       dateScan = dateScan ?? DateTime.now();
 
   factory CodePromoHistory.fromJson(Map<String, dynamic> json) {
