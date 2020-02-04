@@ -1,22 +1,17 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
-import 'package:intl/intl.dart';
 
 import 'package:wesh/components/ErrorDialog.dart';
 import 'package:wesh/components/LoginDialog.dart';
 import 'package:wesh/models/codePromo.dart';
-
 import 'models/CodePromoHistory.dart';
 
 
 final GlobalKey<RefreshIndicatorState> _refreshIndicatorListCodePromos = new GlobalKey<RefreshIndicatorState>();
 final GlobalKey<RefreshIndicatorState> _refreshIndicatorLHistoryCodePromos = new GlobalKey<RefreshIndicatorState>();
 final LoginDialog _loginDialog = new LoginDialog();
-
-
 final _pageController = PageController();
 
 void main() => runApp(MyApp());
@@ -27,7 +22,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Wesh',
       theme: ThemeData(
-        primarySwatch: Colors.green,
+        primarySwatch: Colors.blueGrey,
       ),
       home: MyHomePage(title: 'The Wesh Scanning Application'),
     );
@@ -56,54 +51,88 @@ class _MyHomePageState extends State<MyHomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => loginAndRefresh());
   }
 
-  Future _scanQR() async
-  {
+  Widget _widgetListCodePromos(BuildContext context){
+    Widget child;
 
-    try{
-      String qrCode = await BarcodeScanner.scan();
-      await CodePromo.getOneCodePromoAPI(qrCode, context);
-      _refreshHistory();
-
-    } on PlatformException catch(err) {
-      if (err.code == BarcodeScanner.CameraAccessDenied){
-        ErrorDialog('Erreur Scan QrCode', "Impossible d'accéder à la caméra", context);
-      } else {
-        ErrorDialog('Erreur Inconnue', "Erreur inconnue: $err", context);
-      }
-    } on FormatException {
-      ErrorDialog('Erreur Scan QrCode', "Tu as presser le bouton 'back' trop tôt", context);
-    } catch(err) {
-      ErrorDialog('Erreur Inconnue', "Erreur inconnue: $err", context);
+    if(codePromos.length > 0){
+      child = ListView.builder(
+          padding: EdgeInsets.only(bottom: 24.0),
+          itemCount: codePromos.length,
+          itemBuilder: (context, index){
+            return codePromos[index].widgetCard();
+          }
+      );
+    }else{
+      List<CodePromo> listErrorCodePromo = [];
+      listErrorCodePromo.add(CodePromo(name: 'Aucun code Promo'));
+      
+      child = ListView.builder(
+          padding: EdgeInsets.only(bottom: 24.0),
+          itemCount: listErrorCodePromo.length,
+          itemBuilder: (context, index){
+            return _errorCard(listErrorCodePromo[index].name);
+          }
+      );
     }
-    _pageController.jumpToPage(1);
+
+    return child;
   }
 
-  Future<Null> _refreshListCodePromos() {
-    return CodePromo.getAllCodePromosAPI(context).then((_codePromos) {
-      setState(() {
-        codePromos = _codePromos;
-      });
-    }).catchError((error) => {
-      debugPrint(error.toString())
-    });
+  Widget _widgetListCodePromosHistory(BuildContext context){
+    Widget child;
+
+    if(historyCodePromos.length > 0){
+      child = ListView.builder(
+          padding: EdgeInsets.only(bottom: 24.0),
+          itemCount: historyCodePromos.length,
+          itemBuilder: (context, index){
+            return historyCodePromos[index].widgetCard();
+          }
+      );
+    }else{
+
+      List<CodePromoHistory> listErrorCodePromosHistory = [];
+      listErrorCodePromosHistory.add(new CodePromoHistory(code: new CodePromo(name: 'Aucun code promo Scanner')));
+      child = ListView.builder(
+          padding: EdgeInsets.only(bottom: 24.0),
+          itemCount: listErrorCodePromosHistory.length,
+          itemBuilder: (context, index){
+            return _errorCard(listErrorCodePromosHistory[index].code.name);
+          }
+      );
+    }
+
+    return child;
   }
 
-  Future<Null> _refreshHistory(){
-    return CodePromoHistory.getHistory(context).then((_codePromos){
-      setState(() {
-        historyCodePromos = _codePromos;
-      });
-    });
-  }
-
-  Future loginAndRefresh() async{
-   String state = await _loginDialog.loginDialogShow(context);
-
-   if(state == 'success'){
-     _refreshListCodePromos();
-     _refreshHistory();
-   }
-
+  Widget _errorCard(String name){
+    return Card(
+      margin: EdgeInsets.all(10),
+      elevation: 4,
+      color: Colors.red,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(name,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    overflow: TextOverflow.clip,
+                    softWrap: false,
+                    maxLines: 1,
+                  ),
+                  SizedBox(height: 4),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -125,43 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: RefreshIndicator(
                       key: _refreshIndicatorListCodePromos,
                       onRefresh: _refreshListCodePromos,
-                      child: ListView.builder(
-                        itemCount: codePromos.length,
-                        itemBuilder: (context, index){
-                          return Card(
-                            margin: EdgeInsets.all(12),
-                            elevation: 4,
-                            color: codePromos[index].getColorByStatue(),
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-                              child: Row(
-                                children: <Widget>[
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: <Widget>[
-                                        Text(codePromos[index].name,
-                                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                                          overflow: TextOverflow.fade,
-                                          softWrap: false,
-                                          maxLines: 1,
-                                        ),
-                                        SizedBox(height: 4),
-                                        Text("Code: " + codePromos[index].code, style: TextStyle(color: Colors.white70)),
-                                        Text(new DateFormat.yMMMd().format(codePromos[index].startDate)
-                                            + " --> "
-                                            + new DateFormat.yMMMd().format(codePromos[index].endDate),
-                                            style: TextStyle(color: Colors.white70)),
-                                      ],
-                                    ),
-                                  )
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-                      ),
+                      child: _widgetListCodePromos(context),
                     ),
                   ),
                 ],
@@ -178,43 +171,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     child: RefreshIndicator(
                       key: _refreshIndicatorLHistoryCodePromos,
                       onRefresh: _refreshHistory,
-                      child: ListView.builder(
-                          itemCount: historyCodePromos.length,
-                          itemBuilder: (context, index){
-                            return Card(
-                              margin: EdgeInsets.all(12),
-                              elevation: 4,
-                              color: historyCodePromos[index].getColorByStatue(),
-                              child: Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
-                                child: Row(
-                                  children: <Widget>[
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: <Widget>[
-                                          Text(historyCodePromos[index].code.name,
-                                            style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-                                            overflow: TextOverflow.clip,
-                                            softWrap: false,
-                                            maxLines: 1,
-                                          ),
-                                          SizedBox(height: 4),
-                                          Text("Code: " + historyCodePromos[index].code.code, style: TextStyle(color: Colors.white70)),
-                                          Text(new DateFormat.yMMMd().format(historyCodePromos[index].code.startDate)
-                                              + " --> "
-                                              + new DateFormat.yMMMd().format(historyCodePromos[index].code.endDate),
-                                              style: TextStyle(color: Colors.white70)),
-                                        ],
-                                      ),
-                                    )
-                                  ],
-                                ),
-                              ),
-                            );
-                          }
-                      ),
+                      child: _widgetListCodePromosHistory(context)
                     ),
                   ),
                 ],
@@ -239,4 +196,60 @@ class _MyHomePageState extends State<MyHomePage> {
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
     );
   }
+
+  Future _scanQR() async
+  {
+
+    try{
+      String qrCode = await BarcodeScanner.scan();
+      await CodePromo.getOneCodePromoAPI(qrCode, context);
+      _refreshHistory();
+
+    } on PlatformException catch(err) {
+      if (err.code == BarcodeScanner.CameraAccessDenied){
+        ErrorDialog('Erreur Scan QrCode', "Impossible d'accéder à la caméra", context);
+      } else {
+        ErrorDialog('Erreur Inconnue', "Erreur inconnue: $err", context);
+      }
+    } on FormatException {
+      ErrorDialog('Erreur Scan QrCode', "Tu as presser le bouton 'back' trop tôt", context);
+    } catch(err) {
+      ErrorDialog('Erreur Inconnue', "Erreur inconnue: $err", context);
+    }
+    _pageController.jumpToPage(1);
+  }
+
+
+  Future<Null> _refreshListCodePromos() {
+    return CodePromo.getAllCodePromosAPI(context).then((_codePromos) {
+      setState(() {
+        codePromos = _codePromos;
+      });
+    }).catchError((error) => {
+      ErrorDialog('Erreur Actualisation', "une erreur c'est produite pendant l'actualisation de la liste", context),
+      debugPrint(error.toString())
+    });
+  }
+
+  Future<Null> _refreshHistory(){
+    return CodePromoHistory.getHistory(context).then((_codePromos){
+      setState(() {
+        historyCodePromos = _codePromos;
+      });
+    }).catchError((error) => {
+      ErrorDialog('Erreur Actualisation', "une erreur c'est produite pendant l'actualisation de la liste", context),
+      debugPrint(error.toString())
+    });
+  }
+
+  Future loginAndRefresh() async{
+    String state = await _loginDialog.loginDialogShow(context);
+
+    if(state == 'success'){
+      _refreshListCodePromos();
+      _refreshHistory();
+    }
+
+  }
+
 }

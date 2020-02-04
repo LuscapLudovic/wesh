@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 
 import 'package:wesh/components/ErrorDialog.dart';
@@ -105,6 +106,41 @@ class CodePromo {
     }
 
     return newCodePromo;
+  }
+
+  Widget widgetCard(){
+    return Card(
+      margin: EdgeInsets.all(12),
+      elevation: 4,
+      color: this.getColorByStatue(),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: <Widget>[
+                  Text(this.name,
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    overflow: TextOverflow.fade,
+                    softWrap: false,
+                    maxLines: 1,
+                  ),
+                  SizedBox(height: 4),
+                  Text("Code: " + this.code, style: TextStyle(color: Colors.white70)),
+                  Text(new DateFormat.yMMMd().format(this.startDate)
+                      + " --> "
+                      + new DateFormat.yMMMd().format(this.endDate),
+                      style: TextStyle(color: Colors.white70)),
+                ],
+              ),
+            )
+          ],
+        ),
+      ),
+    );
   }
 
   bool get isValide {
