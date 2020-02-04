@@ -22,6 +22,7 @@ class LoginDialog extends State<MyHomePage>{
             decoration: InputDecoration(hintText: 'Username'),
           ),
           TextField(
+            obscureText: true,
             controller: _password,
             decoration: InputDecoration(hintText: 'Password'),
           ),

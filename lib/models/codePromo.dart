@@ -80,10 +80,7 @@ class CodePromo {
 
     try{
       final http.Response response = await http.get("http://192.168.43.2:8008/api/codepromo/" + codePromo + "/", headers: {"Authorization" : LoginDialog.token})
-          .timeout(new Duration(seconds: 5))
-          .catchError((error){
-        ErrorDialog('Erreur API', "L'API n'est pas accessible", context);
-      });
+          .timeout(new Duration(seconds: 5));
 
       switch(response.statusCode){
         case 200:

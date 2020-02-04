@@ -202,8 +202,11 @@ class _MyHomePageState extends State<MyHomePage> {
 
     try{
       String qrCode = await BarcodeScanner.scan();
-      await CodePromo.getOneCodePromoAPI(qrCode, context);
-      _refreshHistory();
+      await CodePromo.getOneCodePromoAPI(qrCode, context).then((_codePromo) => {
+        if(_codePromo is CodePromo){
+          _refreshHistory()
+        }
+      });
 
     } on PlatformException catch(err) {
       if (err.code == BarcodeScanner.CameraAccessDenied){
