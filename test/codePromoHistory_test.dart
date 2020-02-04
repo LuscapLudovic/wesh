@@ -1,6 +1,6 @@
 import 'package:test/test.dart';
 import 'package:wesh/models/codePromo.dart';
-import 'package:wesh/models/codePromoHistory.dart';
+import 'package:wesh/models/CodePromoHistory.dart';
 
 void main() {
   group('CodePromoHistory', () {

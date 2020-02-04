@@ -1,23 +1,21 @@
 import 'dart:convert';
-
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-
 
 import 'package:wesh/components/ErrorDialog.dart';
 import 'package:wesh/components/LoginDialog.dart';
-import 'package:wesh/models/codePromoHistory.dart';
 import 'package:wesh/models/codePromo.dart';
+
+import 'models/CodePromoHistory.dart';
 
 
 final GlobalKey<RefreshIndicatorState> _refreshIndicatorListCodePromos = new GlobalKey<RefreshIndicatorState>();
 final GlobalKey<RefreshIndicatorState> _refreshIndicatorLHistoryCodePromos = new GlobalKey<RefreshIndicatorState>();
+final LoginDialog _loginDialog = new LoginDialog();
+
 
 final _pageController = PageController();
 
@@ -58,144 +56,40 @@ class _MyHomePageState extends State<MyHomePage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => loginAndRefresh());
   }
 
-  Future<List<CodePromo>> _getAllCodePromosAPI() async
-  {
-    final response = await http.get("http://192.168.43.2:8008/api/codepromo/?time=" + DateTime.now().toIso8601String(), headers: {"Authorization" : LoginDialog.token})
-        .timeout(new Duration(seconds: 5))
-        .catchError((error){
-      ErrorDialog('Error API', 'Fail to connect to the API', context);
-    });
-
-    List<CodePromo> newListCodePromos = [];
-
-    switch(response.statusCode){
-      case 200:
-        List<Object> responseCodePromos = json.decode(response.body);
-        for(int i=0; i<responseCodePromos.length; i++){
-          CodePromo newCodePromo = CodePromo.fromJson(responseCodePromos[i]);
-          newListCodePromos.add(newCodePromo);
-        }
-        break;
-      case 401:
-        loginAndRefresh();
-        ErrorDialog('Error API', 'Your are not authentified', context);
-        break;
-      case 404:
-        ErrorDialog('Code not found', 'this code is not available', context);
-        throw Exception("this code doesn't exist");
-        break;
-      default:
-        ErrorDialog("Error with your qrCode", "Your QrCode is no correct", context);
-        throw Exception('failed to load post');
-        break;
-    }
-    return newListCodePromos;
-  }
-
-  Future<CodePromo> _getOneCodePromoAPI(String codePromo) async
-  {
-    final response = await http.get("http://192.168.43.2:8008/api/codepromo/" + codePromo + "/", headers: {"Authorization" : LoginDialog.token})
-        .timeout(new Duration(seconds: 5))
-        .catchError((error){
-      ErrorDialog('Error API', 'Fail to connect to the API', context);
-    });
-
-    CodePromo newCodePromo;
-
-    switch(response.statusCode){
-      case 200:
-        newCodePromo = CodePromo.fromJson(json.decode(response.body));
-        break;
-      case 401:
-        loginAndRefresh();
-        ErrorDialog('Error API', 'Your are not authentified', context);
-        break;
-      case 404:
-        ErrorDialog('Code not found', 'this code is not available', context);
-        throw Exception("this code doesn't exist");
-        break;
-      default:
-        ErrorDialog("Error with your qrCode", "Your QrCode is no correct", context);
-        throw Exception('failed to load post');
-        break;
-    }
-
-    return newCodePromo;
-  }
-
-  Future<List<CodePromoHistory>> _getHistory() async{
-    final response = await http.get("http://192.168.43.2:8008/api/history/", headers: {"Authorization" : LoginDialog.token})
-        .timeout(new Duration(seconds: 5))
-        .catchError((error){
-      ErrorDialog('Error API', 'Fail to connect to the API', context);
-    });
-
-    List<CodePromoHistory> newListCodePromos = [];
-
-    switch(response.statusCode){
-      case 200:
-        List<Object> responseCodePromos = json.decode(response.body);
-        for(int i=0; i<responseCodePromos.length; i++){
-          CodePromoHistory newCodePromo = CodePromoHistory.fromJson(responseCodePromos[i]);
-          newListCodePromos.add(newCodePromo);
-        }
-        break;
-      case 401:
-        loginAndRefresh();
-        ErrorDialog('Error API', 'Your are not authentified', context);
-        break;
-      case 404:
-        ErrorDialog('History not found', 'Error request History', context);
-        throw Exception("your history doesn't exist");
-        break;
-      default:
-        ErrorDialog("Error with your qrCode", "Your QrCode is no correct", context);
-        throw Exception('failed to load post');
-        break;
-    }
-    return newListCodePromos;
-  }
-
   Future _scanQR() async
   {
 
     try{
       String qrCode = await BarcodeScanner.scan();
-      await _getOneCodePromoAPI(qrCode);
+      await CodePromo.getOneCodePromoAPI(qrCode, context);
       _refreshHistory();
 
     } on PlatformException catch(err) {
       if (err.code == BarcodeScanner.CameraAccessDenied){
-        setState(() {
-          errorMessage = "Camera permission denied";
-        });
+        ErrorDialog('Erreur Scan QrCode', "Impossible d'accéder à la caméra", context);
       } else {
-        setState(() {
-          errorMessage = "Unknown error $err";
-        });
+        ErrorDialog('Erreur Inconnue', "Erreur inconnue: $err", context);
       }
     } on FormatException {
-      setState(() {
-        errorMessage = "You pressed the back button before scanning anything";
-      });
+      ErrorDialog('Erreur Scan QrCode', "Tu as presser le bouton 'back' trop tôt", context);
     } catch(err) {
-      setState(() {
-        errorMessage = "Unknown error $err";
-      });
+      ErrorDialog('Erreur Inconnue', "Erreur inconnue: $err", context);
     }
     _pageController.jumpToPage(1);
   }
 
   Future<Null> _refreshListCodePromos() {
-    return _getAllCodePromosAPI().then((_codePromos) {
+    return CodePromo.getAllCodePromosAPI(context).then((_codePromos) {
       setState(() {
         codePromos = _codePromos;
       });
+    }).catchError((error) => {
+      debugPrint(error.toString())
     });
   }
 
   Future<Null> _refreshHistory(){
-    return _getHistory().then((_codePromos){
+    return CodePromoHistory.getHistory(context).then((_codePromos){
       setState(() {
         historyCodePromos = _codePromos;
       });
@@ -203,25 +97,13 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future loginAndRefresh() async{
-   String state = await LoginDialog.loginDialogShow(context);
-
-   debugPrint(state);
+   String state = await _loginDialog.loginDialogShow(context);
 
    if(state == 'success'){
      _refreshListCodePromos();
      _refreshHistory();
    }
 
-  }
-
-  Color getColorByStatue(DateTime startDate, DateTime endDate){
-    if(startDate.isAfter(DateTime.now())){
-      return Colors.blue;
-    }else if(endDate.isAfter(DateTime.now())){
-      return Colors.green;
-    }else{
-      return Colors.grey;
-    }
   }
 
   @override
@@ -249,7 +131,7 @@ class _MyHomePageState extends State<MyHomePage> {
                           return Card(
                             margin: EdgeInsets.all(12),
                             elevation: 4,
-                            color: getColorByStatue(codePromos[index].startDate, codePromos[index].endDate),
+                            color: codePromos[index].getColorByStatue(),
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                               child: Row(
@@ -302,7 +184,7 @@ class _MyHomePageState extends State<MyHomePage> {
                             return Card(
                               margin: EdgeInsets.all(12),
                               elevation: 4,
-                              color: getColorByStatue(historyCodePromos[index].code.startDate, historyCodePromos[index].code.endDate),
+                              color: historyCodePromos[index].getColorByStatue(),
                               child: Padding(
                                 padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16),
                                 child: Row(
