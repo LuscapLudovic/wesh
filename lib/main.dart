@@ -4,13 +4,12 @@ import 'package:barcode_scan/barcode_scan.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
-import 'package:http/http.dart' as http;
-
 
 import 'package:wesh/components/ErrorDialog.dart';
 import 'package:wesh/components/LoginDialog.dart';
-import 'package:wesh/models/codePromoHistory.dart';
 import 'package:wesh/models/codePromo.dart';
+
+import 'models/CodePromoHistory.dart';
 
 
 final GlobalKey<RefreshIndicatorState> _refreshIndicatorListCodePromos = new GlobalKey<RefreshIndicatorState>();
