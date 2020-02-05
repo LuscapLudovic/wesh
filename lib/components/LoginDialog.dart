@@ -11,6 +11,9 @@ class LoginDialog extends State<MyHomePage>{
   TextEditingController _password = TextEditingController();
   static String token = '';
 
+  /**
+   * Rendu de la la PopUp d'authentification
+   */
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -42,6 +45,9 @@ class LoginDialog extends State<MyHomePage>{
     );
   }
 
+  /**
+   * @return Future<String> success or null si l'authentification est bonne ou non
+   */
   Future<String> loginDialogShow(BuildContext context) async {
 
     String value = await showDialog(
@@ -54,19 +60,23 @@ class LoginDialog extends State<MyHomePage>{
 
     }
 
-    Future<bool> _loginApi(BuildContext context) async {
+  /**
+   * @return Future<bool> si l'utlisateur existe ou pas dans l'API
+   *
+   * Initialise le token si l'authentification est correct
+   */
+  Future<bool> _loginApi(BuildContext context) async {
       try {
         http.Response response = await http.post(
             'http://192.168.43.2:8008/api/token-auth/',
             headers: {"Content-Type": "application/json"},
             body: json.encode(
                 {'username': _username.text, 'password': _password.text})
-        ).timeout(Duration(seconds: 5)).catchError((onError) => {
-          debugPrint(onError.toString())
-        });
+        ).timeout(Duration(seconds: 5));
 
         switch (response.statusCode) {
           case 200:
+            ///Initialise le token retourné par l'API
             token = "Token " + json.decode(response.body)['token'];
             break;
           case 400:

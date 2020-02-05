@@ -11,14 +11,19 @@ import 'package:wesh/models/codePromo.dart';
 
 final LoginDialog _loginDialog = LoginDialog();
 
+/**
+ * Classe des codes promos scannés
+ */
 class CodePromoHistory {
   CodePromo code;
   DateTime dateScan;
 
+  ///Constructeur
   CodePromoHistory({CodePromo code, DateTime dateScan}):
       code = code ?? CodePromo(name: 'Name', code: 'Code'),
       dateScan = dateScan ?? DateTime.now();
 
+  /// Factory qui transforme un object JSON en CodePromoHistory
   factory CodePromoHistory.fromJson(Map<String, dynamic> json) {
     return CodePromoHistory(
       code: CodePromo.fromJson(json["code"]),
@@ -26,6 +31,7 @@ class CodePromoHistory {
     );
   }
 
+  /// Retourne une couleur en fonction de sa date de début et de fin de son code promo associé
   Color getColorByStatue(){
     if(code.startDate.isAfter(DateTime.now())){
       return Colors.blue;
@@ -36,6 +42,7 @@ class CodePromoHistory {
     }
   }
 
+  /// Recupère les codes promos scannés, par l'utilisateur, de l'API
   static Future<List<CodePromoHistory>> getHistory(BuildContext context) async{
 
     List<CodePromoHistory> newListCodePromos = [];
@@ -47,13 +54,16 @@ class CodePromoHistory {
 
       switch(response.statusCode){
         case 200:
+          /// On décode le json pour récupérer une liste d'objet
           List<Object> responseCodePromos = json.decode(response.body);
+          /// pour chaque élément de la liste, on le récupère en CodePromoHistory et on le rajoute à la liste
           for(int i=0; i<responseCodePromos.length; i++){
             CodePromoHistory newCodePromo = CodePromoHistory.fromJson(responseCodePromos[i]);
             newListCodePromos.add(newCodePromo);
           }
           break;
         case 401:
+          /// On ouvre la page de login afin que l'utilisateur puisse se connecter
           _loginDialog.loginDialogShow(context);
           ErrorDialog('Erreur API', 'Veuillez vous authentifier', context);
           break;
@@ -66,9 +76,13 @@ class CodePromoHistory {
       ErrorDialog('Erreur Réseau', "Impossible d'acceder au reseau", context);
     }
 
+    /// On retourne la liste
     return newListCodePromos;
   }
 
+  /**
+   * @return Widget Card affichant les infos du CodePromoHistory
+   */
   Widget widgetCard(){
     return Card(
       margin: EdgeInsets.all(12),

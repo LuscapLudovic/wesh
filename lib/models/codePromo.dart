@@ -12,16 +12,22 @@ import 'package:wesh/components/LoginDialog.dart';
 
 final LoginDialog _loginDialog = LoginDialog();
 
+
+/**
+ * Classe des codes promos
+ */
 class CodePromo {
   String name;
   String code;
   DateTime startDate;
   DateTime endDate;
 
+  /// Constructeur
   CodePromo({this.name = 'NoName', this.code = 'NONAME', DateTime startDate, DateTime endDate}):
         startDate = startDate ?? DateTime.now(),
         endDate = endDate ?? DateTime.now();
 
+  /// Factory qui transforme un object JSON en CodePromo
   factory CodePromo.fromJson(Map<String, dynamic> json) {
     return CodePromo(
       name: utf8.decode(json['name'].toString().codeUnits),
@@ -31,6 +37,7 @@ class CodePromo {
     );
   }
 
+  /// Retourne une couleur en fonction de sa date de début et de fin
   Color getColorByStatue(){
     if(startDate.isAfter(DateTime.now())){
       return Colors.blue;
@@ -41,7 +48,7 @@ class CodePromo {
     }
   }
 
-
+  /// Recupère les codes promos de l'API
   static Future<List<CodePromo>> getAllCodePromosAPI(BuildContext context) async
   {
     List<CodePromo> newListCodePromos = [];
@@ -51,13 +58,16 @@ class CodePromo {
 
       switch(response.statusCode){
         case 200:
+        /// On décode le json pour récupérer une liste d'objet
           List<Object> responseCodePromos = json.decode(response.body);
+          /// pour chaque élément de la liste, on le récupère en CodePromoHistory et on le rajoute à la liste
           for(int i=0; i<responseCodePromos.length; i++){
             CodePromo newCodePromo = CodePromo.fromJson(responseCodePromos[i]);
             newListCodePromos.add(newCodePromo);
           }
           break;
         case 401:
+        /// On ouvre la page de login afin que l'utilisateur puisse se connecter
           _loginDialog.loginDialogShow(context);
           ErrorDialog('Erreur API', 'Veuillez vous authentifier', context);
           break;
@@ -69,10 +79,12 @@ class CodePromo {
     }catch(exception){
       ErrorDialog("Erreur Réseau", "Impossible de se connecter au réseau", context);
     }
+
+    /// On retourne la liste
     return newListCodePromos;
   }
 
-
+  /// Recupère un code promo, ayant le meme code, de l'API
   static Future<CodePromo> getOneCodePromoAPI(String codePromo, BuildContext context) async
   {
 
@@ -84,9 +96,11 @@ class CodePromo {
 
       switch(response.statusCode){
         case 200:
+        /// On décode le json et on initialise un CodePromo avec cet objet
           newCodePromo = CodePromo.fromJson(json.decode(response.body));
           break;
         case 401:
+        /// On ouvre la page de login afin que l'utilisateur puisse se connecter
           _loginDialog.loginDialogShow(context);
           ErrorDialog('Erreur API', 'Veuillez vous authentifier', context);
           break;
@@ -101,9 +115,13 @@ class CodePromo {
       ErrorDialog('Erreur Réseau', "Impossible d'acceder au reseau", context);
     }
 
+    /// On retourne l'objet CodePromo
     return newCodePromo;
   }
 
+  /**
+   * @return Widget Card affichant les infos du CodePromo
+   */
   Widget widgetCard(){
     return Card(
       margin: EdgeInsets.all(12),
@@ -139,6 +157,9 @@ class CodePromo {
     );
   }
 
+  /**
+   * @return bool si la date de début est bien inférieur à la date de fin
+   */
   bool get isValide {
     DateTime now = DateTime.now();
     return startDate.isBefore(now) && endDate.isAfter(now);

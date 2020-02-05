@@ -1,12 +1,15 @@
-
-
 import 'package:flutter/material.dart';
 
 class ErrorDialog{
   String title;
   String content;
 
-
+  /**
+   * @return Widget rendu d'un PopUp avec titre et message
+   *
+   * @param String title Titre de la PopUp
+   * @param String content Message de la PopUp
+   */
   ErrorDialog(String title, String content,BuildContext context) {
     showDialog(
       context: context,
