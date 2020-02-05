@@ -14,8 +14,12 @@ final GlobalKey<RefreshIndicatorState> _refreshIndicatorLHistoryCodePromos = new
 final LoginDialog _loginDialog = new LoginDialog();
 final _pageController = PageController();
 
+/** Lance l'application **/
 void main() => runApp(MyApp());
 
+/**
+ * Coeur de l'application
+ */
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -29,6 +33,9 @@ class MyApp extends StatelessWidget {
   }
 }
 
+/**
+ * Classe gerant la page du site
+ */
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
 
@@ -38,6 +45,9 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
+/**
+ * State de la classe MyHomePage (gère le comportement et le rendu)
+ */
 class _MyHomePageState extends State<MyHomePage> {
 
   CodePromo resultQR;
@@ -47,14 +57,21 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   void initState(){
+    ///Excecution de la fonction parent
     super.initState();
+    ///Appel de la fonction loginAndRefresh après le rendu de la page
     WidgetsBinding.instance.addPostFrameCallback((_) => loginAndRefresh());
   }
 
+  /**
+   * @return Widget composant affichant la liste des codes promos ou d'un message d'erreur
+   */
   Widget _widgetListCodePromos(BuildContext context){
     Widget child;
 
+    /// Si la liste des codes promos possède au moins un élément
     if(codePromos.length > 0){
+      /// On récupère la liste de toutes les Card comportant les infos des codes promos
       child = ListView.builder(
           padding: EdgeInsets.only(bottom: 24.0),
           itemCount: codePromos.length,
@@ -62,7 +79,10 @@ class _MyHomePageState extends State<MyHomePage> {
             return codePromos[index].widgetCard();
           }
       );
+      /// Sinon on récupère une liste comportant un message d'erreur
     }else{
+      /// Le message d'erreur est stocké dans une liste afin que le
+      /// RefreshIndicatorState puisse fonctionné correctement
       List<CodePromo> listErrorCodePromo = [];
       listErrorCodePromo.add(CodePromo(name: 'Aucun code Promo'));
       
@@ -75,13 +95,18 @@ class _MyHomePageState extends State<MyHomePage> {
       );
     }
 
+    /// On retourne le Widget récupéré
     return child;
   }
 
+  /**
+   * @return Widget composant affichant la liste des codes promos scannés ou d'un message d'erreur
+   */
   Widget _widgetListCodePromosHistory(BuildContext context){
     Widget child;
-
+    /// Si la liste des codes promos scannés possède au moins un élément
     if(historyCodePromos.length > 0){
+      /// On récupère la liste de toutes les Card comportant les infos des codes promos
       child = ListView.builder(
           padding: EdgeInsets.only(bottom: 24.0),
           itemCount: historyCodePromos.length,
@@ -89,8 +114,10 @@ class _MyHomePageState extends State<MyHomePage> {
             return historyCodePromos[index].widgetCard();
           }
       );
+      /// Sinon on récupère une liste comportant un message d'erreur
     }else{
-
+      /// Le message d'erreur est stocké dans une liste afin que le
+      /// RefreshIndicatorState puisse fonctionné correctement
       List<CodePromoHistory> listErrorCodePromosHistory = [];
       listErrorCodePromosHistory.add(new CodePromoHistory(code: new CodePromo(name: 'Aucun code promo Scanner')));
       child = ListView.builder(
@@ -101,10 +128,13 @@ class _MyHomePageState extends State<MyHomePage> {
           }
       );
     }
-
+    /// On retourne le Widget récupéré
     return child;
   }
 
+  /**
+   * @return Widget Card affichant un message
+   */
   Widget _errorCard(String name){
     return Card(
       margin: EdgeInsets.all(10),
@@ -135,6 +165,9 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  /**
+   * Architecture d'affichage principale de la page
+   */
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -144,6 +177,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: PageView(
         controller: _pageController,
         children: <Widget>[
+          ///Page d'affichage des codes promos
           Padding(
             padding: const EdgeInsets.only(top: 24.0),
             child:Center(
@@ -161,6 +195,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
             ),
           ),
+          ///Page d'affichage des code promos scannés
           Padding(
             padding: const EdgeInsets.only(top: 24.0),
             child: Center(
@@ -180,6 +215,7 @@ class _MyHomePageState extends State<MyHomePage> {
           )
         ],
       ),
+      ///Barre possédant les boutons pour naviguer dans les pages
       bottomNavigationBar: BottomAppBar(
         shape: CircularNotchedRectangle(),
         child: Row(
@@ -190,6 +226,7 @@ class _MyHomePageState extends State<MyHomePage> {
           ],
         ),
     ),
+      /// Bouton lançant le scan du QRCode
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.camera_alt), onPressed: _scanQR,
       ),
@@ -197,17 +234,25 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  /**
+   * Fonction qui scanne, actualise la liste des codes promos scannés
+   * et redirige vers la pages des codes scannés
+   */
   Future _scanQR() async
   {
 
     try{
+      /// On attend le retour de la librairie BarcodeScanner
       String qrCode = await BarcodeScanner.scan();
+      /// On attend le retour de l'API avec le code scanné
       await CodePromo.getOneCodePromoAPI(qrCode, context).then((_codePromo) => {
+        ///Si le code existe on rafraichie la liste des codes promos scannés
         if(_codePromo is CodePromo){
           _refreshHistory()
         }
       });
 
+      ///Gestion des cas d'erreurs
     } on PlatformException catch(err) {
       if (err.code == BarcodeScanner.CameraAccessDenied){
         ErrorDialog('Erreur Scan QrCode', "Impossible d'accéder à la caméra", context);
@@ -219,35 +264,51 @@ class _MyHomePageState extends State<MyHomePage> {
     } catch(err) {
       ErrorDialog('Erreur Inconnue', "Erreur inconnue: $err", context);
     }
+
+    /// On redirige l'utilisateur vers la page des codes promos scannés
     _pageController.jumpToPage(1);
   }
 
 
+  /**
+   * Rafraichie la liste des codes promos
+   */
   Future<Null> _refreshListCodePromos() {
+    /// On attend la liste des codes promos retournée par l'API
     return CodePromo.getAllCodePromosAPI(context).then((_codePromos) {
+      /// On affecte la liste retournée à notre liste
       setState(() {
         codePromos = _codePromos;
       });
+      /// Cas d'erreur
     }).catchError((error) => {
       ErrorDialog('Erreur Actualisation', "une erreur c'est produite pendant l'actualisation de la liste", context),
-      debugPrint(error.toString())
     });
   }
 
+  /**
+   * Rafraichie la liste des codes promos scannés
+   */
   Future<Null> _refreshHistory(){
+    /// On attend la liste des codes promos scannés retournée par l'API
     return CodePromoHistory.getHistory(context).then((_codePromos){
+      /// On affecte la liste retournée à notre liste
       setState(() {
         historyCodePromos = _codePromos;
       });
+      /// Cas d'erreur
     }).catchError((error) => {
       ErrorDialog('Erreur Actualisation', "une erreur c'est produite pendant l'actualisation de la liste", context),
-      debugPrint(error.toString())
     });
   }
 
-  Future loginAndRefresh() async{
+  /**
+   * Fonction qui affiche la page de login et actualise les listes de code promos
+   */
+   Future loginAndRefresh() async{
     String state = await _loginDialog.loginDialogShow(context);
 
+    /// si la personne se connecte correctement
     if(state == 'success'){
       _refreshListCodePromos();
       _refreshHistory();

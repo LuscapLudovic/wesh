@@ -9,6 +9,8 @@ import 'package:wesh/components/ErrorDialog.dart';
 import 'package:wesh/components/LoginDialog.dart';
 import 'package:wesh/models/codePromo.dart';
 
+final LoginDialog _loginDialog = LoginDialog();
+
 class CodePromoHistory {
   CodePromo code;
   DateTime dateScan;
@@ -52,11 +54,11 @@ class CodePromoHistory {
           }
           break;
         case 401:
+          _loginDialog.loginDialogShow(context);
           ErrorDialog('Erreur API', 'Veuillez vous authentifier', context);
           break;
         default:
           ErrorDialog("Erreur API", "L'API n'est pas accessible", context);
-          throw Exception('failed to connect to API');
           break;
       }
 

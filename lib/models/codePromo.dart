@@ -10,6 +10,8 @@ import 'package:intl/intl.dart';
 import 'package:wesh/components/ErrorDialog.dart';
 import 'package:wesh/components/LoginDialog.dart';
 
+final LoginDialog _loginDialog = LoginDialog();
+
 class CodePromo {
   String name;
   String code;
@@ -56,13 +58,11 @@ class CodePromo {
           }
           break;
         case 401:
-          LoginDialog();
+          _loginDialog.loginDialogShow(context);
           ErrorDialog('Erreur API', 'Veuillez vous authentifier', context);
-          throw Exception('Error Auth');
           break;
         default:
           ErrorDialog("Erreur API", "L'API n'est pas accessible", context);
-          throw Exception('failed to connect to API');
           break;
 
       }
@@ -87,15 +87,14 @@ class CodePromo {
           newCodePromo = CodePromo.fromJson(json.decode(response.body));
           break;
         case 401:
+          _loginDialog.loginDialogShow(context);
           ErrorDialog('Erreur API', 'Veuillez vous authentifier', context);
           break;
         case 404:
           ErrorDialog("Erreur avec votre QRCode", "Ce code n'est pas disponible", context);
-          throw Exception("code doesn't exist");
           break;
         default:
           ErrorDialog("Erreur avec votre QRCode", "Ce QrCode n'est pas correct", context);
-          throw Exception('error QRCode');
           break;
       }
     }catch(exception){
